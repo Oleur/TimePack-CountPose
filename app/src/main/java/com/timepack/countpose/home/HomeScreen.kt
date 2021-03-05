@@ -35,6 +35,8 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,6 +57,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -68,6 +71,7 @@ import com.timepack.countpose.R
 import com.timepack.countpose.TimePackViewModel
 import com.timepack.countpose.theme.blue700
 import com.timepack.countpose.theme.green200
+import com.timepack.countpose.theme.greenLight700
 import com.timepack.countpose.theme.red700
 import com.timepack.countpose.theme.typography
 
@@ -79,7 +83,7 @@ fun HomeScreen(timePackViewModel: TimePackViewModel) {
     ConstraintLayout(
         modifier = Modifier.fillMaxSize()
     ) {
-        val (topBar, wave, playButton, resetButton) = createRefs()
+        val (topBar, wave, playButton, resetButton, timesUpText) = createRefs()
 
         TopAppBar(
             elevation = 4.dp,
@@ -103,7 +107,6 @@ fun HomeScreen(timePackViewModel: TimePackViewModel) {
         }
 
         val playPauseState = remember { mutableStateOf(true) }
-
         TimeWave(
             timeSpec = timePackViewModel.timeState.value * DateUtils.SECOND_IN_MILLIS,
             playPauseState.value,
@@ -116,6 +119,31 @@ fun HomeScreen(timePackViewModel: TimePackViewModel) {
                     bottom.linkTo(parent.bottom)
                 }
         )
+
+        AnimatedVisibility(
+            visible = false,
+            modifier = Modifier.constrainAs(timesUpText) {
+                top.linkTo(parent.top)
+                bottom.linkTo(parent.bottom)
+                start.linkTo(parent.start)
+                end.linkTo(parent.end)
+            }
+        ) {
+            Text(
+                text = context.getString(R.string.timesup),
+                style = typography.h3.copy(color = red700),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp)
+                    .border(width = 4.dp, color = red700, RoundedCornerShape(8.dp))
+                    .graphicsLayer {
+                        shadowElevation = 8.dp.toPx()
+                    }
+                    .background(color = greenLight700, RoundedCornerShape(8.dp))
+                    .padding(32.dp)
+            )
+        }
 
         AnimatedVisibility(
             modifier = Modifier
@@ -135,21 +163,13 @@ fun HomeScreen(timePackViewModel: TimePackViewModel) {
                 }
             ) + fadeOut()
         ) {
-            Button(
-                shape = RoundedCornerShape(36.dp),
-                onClick = {
+            ActionButton(
+                res = R.drawable.ic_play_24,
+                action = {
                     playPauseState.value = false
                     timePackViewModel.startTimer(10)
-                },
-                colors = ButtonDefaults.buttonColors(backgroundColor = blue700),
-                modifier = Modifier.size(72.dp)
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_play_24),
-                    contentDescription = "Play Icon",
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+                }
+            )
         }
 
         AnimatedVisibility(
@@ -160,21 +180,13 @@ fun HomeScreen(timePackViewModel: TimePackViewModel) {
                     bottom.linkTo(parent.bottom, margin = 32.dp)
                 }
         ) {
-            Button(
-                shape = RoundedCornerShape(36.dp),
-                onClick = {
+            ActionButton(
+                res = R.drawable.ic_reset,
+                action = {
                     playPauseState.value = true
                     timePackViewModel.stop(10)
-                },
-                colors = ButtonDefaults.buttonColors(backgroundColor = blue700),
-                modifier = Modifier.size(72.dp)
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_reset),
-                    contentDescription = "Pause Icon",
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+                }
+            )
         }
     }
 }
@@ -266,7 +278,7 @@ fun TimeWave(
                         it.nativeCanvas.drawText(
                             DateUtils.formatElapsedTime(timePackViewModel.timeState.value),
                             (size.width / 2) - 200,
-                            250f,
+                            275f,
                             textPaint
                         )
                     }
@@ -274,4 +286,22 @@ fun TimeWave(
             }
         }
     )
+}
+
+@Composable
+fun ActionButton(res: Int, modifier: Modifier = Modifier, action: () -> Unit) {
+    Button(
+        shape = RoundedCornerShape(36.dp),
+        onClick = {
+            action.invoke()
+        },
+        colors = ButtonDefaults.buttonColors(backgroundColor = blue700),
+        modifier = Modifier.size(72.dp)
+    ) {
+        Image(
+            painter = painterResource(id = res),
+            contentDescription = "Action Button",
+            modifier = Modifier.fillMaxSize()
+        )
+    }
 }

@@ -10,4 +10,5 @@
       the License.
       -->
     <string name="app_name">TimePack CountPose</string>
+    <string name="timesup">Time\'s up!</string>
 </resources>

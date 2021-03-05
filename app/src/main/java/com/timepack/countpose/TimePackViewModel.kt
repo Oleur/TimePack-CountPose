@@ -50,8 +50,9 @@ class TimePackViewModel @Inject constructor() : ViewModel() {
             while (isActive) {
                 if (timeState.value <= 0) {
                     cancel()
+                    return@launch
                 }
-                alertState.emit(timeState.value < 5)
+                alertState.emit(timeState.value <= 5)
                 delay(1_000)
                 timeState.emit(timeState.value - 1)
             }
