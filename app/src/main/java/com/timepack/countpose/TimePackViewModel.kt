@@ -21,7 +21,6 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -45,13 +44,12 @@ class TimePackViewModel @Inject constructor() : ViewModel() {
     }
 
     // Time in second
-    fun startTimer(time: Long) {
+    fun startTimer() {
         stop()
         job = viewModelScope.launch(Dispatchers.IO) {
-            timeState.postValue(time)
             while (isActive) {
                 if (timeState.value!! <= 0L) {
-                    cancel()
+                    job?.cancel()
                     return@launch
                 }
                 alertMessage.postValue(timeState.value!! - 1 == 0L)
@@ -65,5 +63,11 @@ class TimePackViewModel @Inject constructor() : ViewModel() {
     fun stop(time: Long = 0) {
         job?.cancel()
         setupInitTime(time)
+    }
+
+    fun addTime(time: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            timeState.postValue(timeState.value!! + time)
+        }
     }
 }

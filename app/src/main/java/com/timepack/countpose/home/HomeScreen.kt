@@ -47,6 +47,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
@@ -55,6 +57,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -82,6 +85,7 @@ import com.timepack.countpose.theme.typography
 @Composable
 fun HomeScreen(timePackViewModel: TimePackViewModel) {
     val context = LocalContext.current
+    val playPauseState = remember { mutableStateOf(true) }
 
     ConstraintLayout(
         modifier = Modifier.fillMaxSize()
@@ -89,6 +93,27 @@ fun HomeScreen(timePackViewModel: TimePackViewModel) {
         val (topBar, wave, playButton, resetButton, timesUpText) = createRefs()
 
         TopAppBar(
+            title = {
+                Text(
+                    text = context.getString(R.string.app_name),
+                    style = typography.h5
+                )
+            },
+            actions = {
+                IconButton(
+                    onClick = {
+                        if (playPauseState.value) {
+                            timePackViewModel.addTime(10)
+                        }
+                    }
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_baseline_more_time_24),
+                        contentDescription = "Add 10 seconds",
+                        tint = Color.White
+                    )
+                }
+            },
             elevation = 4.dp,
             modifier = Modifier
                 .constrainAs(topBar) {
@@ -98,18 +123,8 @@ fun HomeScreen(timePackViewModel: TimePackViewModel) {
                 }
                 .fillMaxWidth()
                 .height(56.dp)
-        ) {
-            Text(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = 12.dp),
-                textAlign = TextAlign.Center,
-                text = context.getString(R.string.app_name),
-                style = typography.h5
-            )
-        }
+        )
 
-        val playPauseState = remember { mutableStateOf(true) }
         TimeWave(
             timeSpec = timePackViewModel.timeState.value!! * DateUtils.SECOND_IN_MILLIS,
             playPauseState.value,
@@ -169,12 +184,11 @@ fun HomeScreen(timePackViewModel: TimePackViewModel) {
             ) + fadeOut()
         ) {
             ActionButton(
-                res = R.drawable.ic_play_24,
-                action = {
-                    playPauseState.value = false
-                    timePackViewModel.startTimer(10)
-                }
-            )
+                res = R.drawable.ic_play_24
+            ) {
+                playPauseState.value = false
+                timePackViewModel.startTimer()
+            }
         }
 
         AnimatedVisibility(
@@ -186,12 +200,11 @@ fun HomeScreen(timePackViewModel: TimePackViewModel) {
                 }
         ) {
             ActionButton(
-                res = R.drawable.ic_reset,
-                action = {
-                    playPauseState.value = true
-                    timePackViewModel.stop(10)
-                }
-            )
+                res = R.drawable.ic_reset
+            ) {
+                playPauseState.value = true
+                timePackViewModel.stop(10)
+            }
         }
     }
 }
@@ -218,10 +231,10 @@ fun TimeWave(
     )
 
     val screenWidthPx = with(LocalDensity.current) {
-        LocalConfiguration.current.screenHeightDp * density
+        (LocalConfiguration.current.screenHeightDp * density) - 150.dp.toPx()
     }
     val animTranslate by animateFloatAsState(
-        targetValue = if (init) 0f else screenWidthPx - 350f,
+        targetValue = if (init) 0f else screenWidthPx,
         animationSpec = TweenSpec(if (init) 0 else timeSpec.toInt(), easing = LinearEasing)
     )
 
@@ -246,7 +259,7 @@ fun TimeWave(
     val textPaint = Paint().asFrameworkPaint()
 
     Canvas(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         onDraw = {
             translate(top = animTranslate) {
                 drawPath(path = path, color = animColor)
@@ -296,7 +309,7 @@ fun TimeWave(
 }
 
 @Composable
-fun ActionButton(res: Int, modifier: Modifier = Modifier, action: () -> Unit) {
+fun ActionButton(res: Int, action: () -> Unit) {
     Button(
         shape = RoundedCornerShape(36.dp),
         onClick = {
