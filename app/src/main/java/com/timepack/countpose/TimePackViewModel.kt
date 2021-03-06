@@ -15,6 +15,7 @@
  */
 package com.timepack.countpose
 
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,7 +23,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,13 +32,15 @@ class TimePackViewModel @Inject constructor() : ViewModel() {
 
     private var job: Job? = null
 
-    val timeState = MutableStateFlow(0L)
-    val alertState = MutableStateFlow(false)
+    val timeState = MutableLiveData(0L)
+    val alertState = MutableLiveData(false)
+    val alertMessage = MutableLiveData(false)
 
     fun setupInitTime(time: Long) {
         viewModelScope.launch(Dispatchers.IO) {
-            timeState.emit(time)
-            alertState.emit(false)
+            timeState.postValue(time)
+            alertState.postValue(false)
+            alertMessage.postValue(false)
         }
     }
 
@@ -46,15 +48,16 @@ class TimePackViewModel @Inject constructor() : ViewModel() {
     fun startTimer(time: Long) {
         stop()
         job = viewModelScope.launch(Dispatchers.IO) {
-            timeState.emit(time)
+            timeState.postValue(time)
             while (isActive) {
-                if (timeState.value <= 0) {
+                if (timeState.value!! <= 0L) {
                     cancel()
                     return@launch
                 }
-                alertState.emit(timeState.value <= 5)
+                alertMessage.postValue(timeState.value!! - 1 == 0L)
+                alertState.postValue(timeState.value!! - 1 <= 5)
+                timeState.postValue((timeState.value!! - 1).coerceAtLeast(0L))
                 delay(1_000)
-                timeState.emit(timeState.value - 1)
             }
         }
     }

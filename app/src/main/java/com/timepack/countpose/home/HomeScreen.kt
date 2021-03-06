@@ -28,7 +28,9 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandIn
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -49,6 +51,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -108,7 +111,7 @@ fun HomeScreen(timePackViewModel: TimePackViewModel) {
 
         val playPauseState = remember { mutableStateOf(true) }
         TimeWave(
-            timeSpec = timePackViewModel.timeState.value * DateUtils.SECOND_IN_MILLIS,
+            timeSpec = timePackViewModel.timeState.value!! * DateUtils.SECOND_IN_MILLIS,
             playPauseState.value,
             timePackViewModel,
             modifier = Modifier
@@ -120,8 +123,10 @@ fun HomeScreen(timePackViewModel: TimePackViewModel) {
                 }
         )
 
+        val isAlertMessageVisible by timePackViewModel.alertMessage.observeAsState(initial = false)
         AnimatedVisibility(
-            visible = false,
+            visible = isAlertMessageVisible,
+            enter = expandIn(animationSpec = spring()),
             modifier = Modifier.constrainAs(timesUpText) {
                 top.linkTo(parent.top)
                 bottom.linkTo(parent.bottom)
@@ -236,7 +241,7 @@ fun TimeWave(
     )
 
     val waveWidth = 200
-    val originalY = 350f
+    val originalY = 150f
     val path = Path()
     val textPaint = Paint().asFrameworkPaint()
 
@@ -247,7 +252,7 @@ fun TimeWave(
                 drawPath(path = path, color = animColor)
                 path.reset()
                 val halfWaveWidth = waveWidth / 2
-                path.moveTo(-waveWidth + (waveWidth * dx), originalY)
+                path.moveTo(-waveWidth + (waveWidth * dx), originalY.dp.toPx())
 
                 for (i in -waveWidth..(size.width.toInt() + waveWidth) step waveWidth) {
                     path.relativeQuadraticBezierTo(
@@ -267,8 +272,10 @@ fun TimeWave(
                 path.lineTo(size.width, size.height)
                 path.lineTo(0f, size.height)
                 path.close()
+            }
 
-                scale(scale = if (timePackViewModel.alertState.value) animAlertScale else 1f) {
+            translate(top = animTranslate * 0.92f) {
+                scale(scale = if (timePackViewModel.alertState.value!!) animAlertScale else 1f) {
                     drawIntoCanvas {
                         textPaint.apply {
                             isAntiAlias = true
@@ -276,9 +283,9 @@ fun TimeWave(
                             typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
                         }
                         it.nativeCanvas.drawText(
-                            DateUtils.formatElapsedTime(timePackViewModel.timeState.value),
-                            (size.width / 2) - 200,
-                            275f,
+                            DateUtils.formatElapsedTime(timePackViewModel.timeState.value!!),
+                            (size.width / 2) - 64.dp.toPx(),
+                            120.dp.toPx(),
                             textPaint
                         )
                     }
