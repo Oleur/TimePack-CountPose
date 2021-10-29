@@ -44,6 +44,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
@@ -57,6 +59,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
@@ -70,9 +73,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.core.graphics.withSkew
+import androidx.core.graphics.withTranslation
 import com.timepack.countpose.R
 import com.timepack.countpose.TimePackViewModel
 import com.timepack.countpose.theme.blue700
@@ -90,7 +96,7 @@ fun HomeScreen(timePackViewModel: TimePackViewModel) {
     ConstraintLayout(
         modifier = Modifier.fillMaxSize()
     ) {
-        val (topBar, wave, playButton, resetButton, timesUpText) = createRefs()
+        val (topBar, wave, polygon, playButton, resetButton, timesUpText) = createRefs()
 
         TopAppBar(
             title = {
@@ -125,7 +131,7 @@ fun HomeScreen(timePackViewModel: TimePackViewModel) {
                 .height(56.dp)
         )
 
-        TimeWave(
+        /*TimeWave(
             timeSpec = timePackViewModel.timeState.value!! * DateUtils.SECOND_IN_MILLIS,
             playPauseState.value,
             timePackViewModel,
@@ -136,6 +142,28 @@ fun HomeScreen(timePackViewModel: TimePackViewModel) {
                     end.linkTo(parent.end)
                     bottom.linkTo(parent.bottom)
                 }
+        )*/
+        /*TicketComposable(modifier = Modifier
+            .constrainAs(wave) {
+                top.linkTo(topBar.bottom)
+                start.linkTo(parent.start)
+                end.linkTo(parent.end)
+                bottom.linkTo(parent.bottom)
+            }
+        )*/
+        TicketWaveComposable(modifier = Modifier
+            .constrainAs(wave) {
+                top.linkTo(topBar.top, margin = 64.dp)
+                start.linkTo(parent.start)
+                end.linkTo(parent.end)
+            }
+        )
+        PolygonImageComposable(modifier = Modifier
+            .constrainAs(polygon) {
+                start.linkTo(parent.start)
+                end.linkTo(parent.end)
+                bottom.linkTo(parent.bottom, margin = 64.dp)
+            }
         )
 
         val isAlertMessageVisible by timePackViewModel.alertMessage.observeAsState(initial = false)
@@ -156,11 +184,13 @@ fun HomeScreen(timePackViewModel: TimePackViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(32.dp)
-                    .border(width = 4.dp, color = red700, RoundedCornerShape(8.dp))
+                    .border(width = 4.dp, color = red700, CutCornerShape(32.dp))
                     .graphicsLayer {
                         shadowElevation = 8.dp.toPx()
+                        shape = CutCornerShape(32.dp)
+                        clip = true
                     }
-                    .background(color = greenLight700, RoundedCornerShape(8.dp))
+                    .background(color = greenLight700)
                     .padding(32.dp)
             )
         }
